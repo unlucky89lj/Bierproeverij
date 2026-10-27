@@ -17,7 +17,7 @@
 
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_circle,calendar_month,checklist,church,dark_mode,eco,emoji_events,favorite,flight_takeoff,format_list_bulleted,gavel,home,lock,military_tech,photo_camera,play_circle,public,qr_code_scanner,school,science,search,sports_bar,star,thumb_up,track_changes,travel_explore,visibility_off,workspace_premium&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_circle,calendar_month,checklist,church,dark_mode,eco,emoji_events,favorite,flight_takeoff,format_list_bulleted,gavel,home,lock,military_tech,photo_camera,photo_library,play_circle,public,qr_code_scanner,school,science,search,sports_bar,star,sync,thumb_up,track_changes,travel_explore,visibility_off,workspace_premium&display=block">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: one narrow column like a tasting sheet on a clipboard; sticky tab bar, cards only for beers. */
@@ -96,6 +96,13 @@ button,.btn{font-family:var(--f-body)}
 .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:220px;border:1.5px dashed var(--line);border-radius:var(--r);background:var(--surface);cursor:pointer;text-align:center;padding:20px;position:relative;overflow:hidden}
 .drop img{max-height:340px;border-radius:8px}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.cal-sub{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--sunk)}
+.cal-sub>.ms{color:var(--amber)}
+.cal-sub b{display:block}.cal-sub small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.cal-sub .cal-btns,.cal-sub .note{grid-column:1/-1;margin:0}
+.photo-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.photo-btns .btn{cursor:pointer}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;opacity:0}
 .reveal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px}
 .origin{font-family:var(--f-mono);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .big-name{font-family:var(--f-display);font-weight:800;font-size:40px;line-height:1;text-transform:uppercase;overflow-wrap:anywhere}
@@ -936,7 +943,8 @@ function viewScan(){
   const sc=S.scan, b=sc.beer;
   let out=`<div><h2>Bier scannen</h2><p class="muted">Maak een foto van het etiket. Je ziet alleen welk bier het is en waar het vandaan komt. De smaken blijven verborgen tot je de vragenlijst hebt ingevuld.</p></div>`;
   if(!S.canWrite)out+=`<p class="err">Je kunt in deze groep alleen meekijken. Vraag de eigenaar om je als Contributor toe te voegen.</p>`;
-  out+=`<label class="drop" for="photo">${sc.preview?`<img src="${sc.preview}" alt="Foto van het bier">`:`<b>Foto maken of kiezen</b><span class="note">Etiket goed in beeld, liefst recht van voren</span>`}<input type="file" id="photo" accept="image/*" capture="environment"></label>`;
+  out+=`<label class="drop" for="photo">${sc.preview?`<img src="${sc.preview}" alt="Foto van het bier">`:`<b>Tik om een foto te maken</b><span class="note">Etiket goed in beeld, liefst recht van voren</span>`}<input type="file" id="photo" accept="image/*" capture="environment"></label>
+  <div class="photo-btns"><label class="btn ghost small" for="photo"><span class="ms" aria-hidden="true">photo_camera</span>Foto maken</label><label class="btn ghost small" for="photo-lib"><span class="ms" aria-hidden="true">photo_library</span>Kies uit je foto's</label><input type="file" id="photo-lib" accept="image/*" class="vh"></div>`;
   if(sc.status==="busy")out+=`<div class="reveal" style="align-items:center;flex-direction:row"><div class="spin"></div><span>Etiket lezen…</span></div>`;
   if(sc.error)out+=`<p class="err">${esc(sc.error)}</p>`;
   if(b&&sc.status!=="busy"){
@@ -1826,10 +1834,10 @@ let mapResizeT;window.addEventListener("resize",()=>{clearTimeout(mapResizeT);ma
 const pad2=n=>String(n).padStart(2,"0");
 function evTimes(t){const [d,tm]=t.datum.split("T"),[y,mo,da]=d.split("-").map(Number),[hh,mi]=tm.split(":").map(Number);
   const st=new Date(y,mo-1,da,hh,mi),en=new Date(st.getTime()+3*36e5),z=x=>x.toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";return {st,en,zs:z(st),ze:z(en)}}
-function icsFor(t){
+function icsFor(t,feed){
   const {zs,ze}=evTimes(t);const clean=x=>String(x).replace(/[\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
   const desc=(t.blind?"Blind proeven: de bieren krijgen nummers (Bier 1, 2, 3…) en worden na afloop onthuld. ":"Normaal proeven. ")+"Thema: "+themeName(t)+(t.stijl?" ("+(groupOf(t.stijl)?.[1].join(", ")||"")+")":"")+". Vul na elk bier de vragenlijst in de app in. Proost!";
-  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bierproeverij//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",`UID:bp-${t.at||zs}@proefgroep`,`SEQUENCE:${t.rev||0}`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
+  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bierproeverij//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH",...(feed?["X-WR-CALNAME:🍺 Bierproeverij","X-WR-TIMEZONE:Europe/Amsterdam","REFRESH-INTERVAL;VALUE=DURATION:PT3H","X-PUBLISHED-TTL:PT3H"]:[]),"BEGIN:VEVENT",`UID:bp-${t.at||zs}@proefgroep`,`SEQUENCE:${t.rev||0}`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
     `DTSTART:${zs}`,`DTEND:${ze}`,`SUMMARY:${clean("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}`,`DESCRIPTION:${clean(desc)}`,...(locText(t)?[`LOCATION:${clean(locText(t))}`]:[]),
     "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("Morgen bierproeverij: "+themeName(t))}`,"TRIGGER:-P1D","END:VALARM",
     "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("Over 2 uur bierproeverij!")}`,"TRIGGER:-PT2H","END:VALARM",
@@ -1837,6 +1845,18 @@ function icsFor(t){
 }
 const locText=t=>[t.locatie?(/^bij\b/i.test(t.locatie)?t.locatie:"Bij "+t.locatie):"",t.adres||""].filter(Boolean).join(", ");
 const calSig=t=>[t.at,t.datum,locText(t),themeName(t),t.blind?1:0].join("|");
+const FEED_URL="unlucky89lj.github.io/Bierproeverij/agenda.ics";
+const feedSig=t=>t&&t.datum?calSig(t)+"|"+(t.rev||0):"geen|"+(t&&t.at||0);
+async function syncAgendaFeed(){
+  const t=S.next;if(!S.db||S.demo||!S.canWrite||!S.me||!t)return;
+  const sig=feedSig(t);if(S.feedSig===sig)return;
+  try{
+    const d=await S.db.doc("meta/agenda").get();const cur=d&&d.exists?d.data():null;
+    if(cur&&cur.sig===sig){S.feedSig=sig;return}
+    await S.db.doc("meta/agenda").set({sig,uid:`bp-${t.at||0}@proefgroep`,ics:t.datum?icsFor(t,true):"",at:Date.now(),by:S.me});
+    S.feedSig=sig;
+  }catch(e){}
+}
 const calSaved=()=>{try{return JSON.parse(localStorage.getItem("bp-cal")||"null")}catch(e){return null}};
 function markCalAdded(){const t=S.next;if(!t||!t.datum)return;try{localStorage.setItem("bp-cal",JSON.stringify({at:t.at,sig:calSig(t)}))}catch(e){}document.querySelectorAll(".cal-alert").forEach(e=>e.remove())}
 function calChanged(){const t=S.next,c=calSaved();return !!(t&&t.datum&&c&&c.at===t.at&&c.sig!==calSig(t))}
@@ -1852,6 +1872,9 @@ function modeHtml(t){const can=S.canWrite&&S.db&&S.me,b=!!t.blind;
     ${can?`<div class="chips mode-chips" role="group" aria-label="Proefwijze"><button type="button" class="chip" data-mode-set="0" aria-pressed="${!b}">Normaal</button><button type="button" class="chip" data-mode-set="1" aria-pressed="${b}">Blind</button></div>`:""}</div>`}
 function outlookLink(t){const {st,en}=evTimes(t);return `https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}&startdt=${encodeURIComponent(st.toISOString())}&enddt=${encodeURIComponent(en.toISOString())}&body=${encodeURIComponent((t.blind?"Blind proeven. ":"Normaal proeven. ")+"Thema: "+themeName(t))}${locText(t)?`&location=${encodeURIComponent(locText(t))}`:""}`}
 function calButtons(t,small){return `${calChangeBanner()}<div class="cal-btns"><button class="btn amber${small?" small":""}" data-ics><span class="ms" aria-hidden="true">calendar_month</span> Zet in mijn agenda</button><a class="btn ghost small" data-cal-add href="${gcalLink(t)}" target="_blank" rel="noopener">Google Agenda</a><a class="btn ghost small" data-cal-add href="${outlookLink(t)}" target="_blank" rel="noopener">Outlook</a></div>
+  <div class="cal-sub"><span class="ms" aria-hidden="true">sync</span><span><b>Automatisch bijwerken</b><small>Abonneer één keer op de agenda van de groep. Verandert de datum, locatie of proefwijze, dan past je agenda de afspraak vanzelf aan.</small></span>
+  <div class="cal-btns"><a class="btn ghost small" href="webcal://${FEED_URL}" target="_blank" rel="noopener">Abonneren (iPhone/Mac)</a><a class="btn ghost small" href="https://calendar.google.com/calendar/r?cid=${encodeURIComponent("webcal://"+FEED_URL)}" target="_blank" rel="noopener">Abonneren in Google</a><a class="btn ghost small" href="https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent("https://"+FEED_URL)}&name=${encodeURIComponent("Bierproeverij")}" target="_blank" rel="noopener">Abonneren in Outlook</a></div>
+  <p class="note">Google en Outlook halen een abonnement een paar keer per dag op; een wijziging kan dus enkele uren duren. Gebruik je het abonnement, dan hoef je de knoppen hierboven niet meer te gebruiken.</p></div>
   <p class="note ics-note">iPhone: tik op <b>Zet in mijn agenda</b>, open het bestand en kies <b>Voeg toe</b>. Android: kies <b>Google Agenda</b>. Met een herinnering een dag en twee uur van tevoren. Wijzigt de datum of locatie, dan zie je hier een melding; tik dan opnieuw. Op iPhone wordt de bestaande afspraak dan bijgewerkt, bij Google of Outlook verwijder je de oude.</p>`}
 function gcalLink(t){const [d,tm]=t.datum.split("T"),st=d.replace(/-/g,"")+"T"+tm.replace(":","")+"00";
   const [y,mo,da]=d.split("-").map(Number),[hh,mi]=tm.split(":").map(Number),en=new Date(y,mo-1,da,hh+3,mi),
@@ -2069,6 +2092,7 @@ function bind(){
   document.querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{S.sort=b.dataset.sort;try{localStorage.setItem("pb-sort",S.sort)}catch(e){}render()});
   const q=$("#q"); if(q)q.oninput=()=>{S.q=q.value;const pos=q.selectionStart;render();const n=$("#q");n.focus();n.setSelectionRange(pos,pos)};
   const ph=$("#photo"); if(ph)ph.onchange=()=>ph.files[0]&&onPhoto(ph.files[0]);
+  const pl=$("#photo-lib"); if(pl)pl.onchange=()=>pl.files[0]&&onPhoto(pl.files[0]);
   const eb=$("#edit-beer"); if(eb)eb.onclick=()=>{S.scan.editing=true;render()};
   const mn=$("#manual"); if(mn)mn.onclick=()=>{S.scan.beer={naam:"",brouwerij:"",plaats:"",land:""};S.scan.editing=true;render()};
   const st=$("#start"); if(st)st.onclick=startTasting;
@@ -2215,7 +2239,7 @@ fetch("catalog.json").then(r=>r.ok?r.json():[]).then(d=>{if(Array.isArray(d)){S.
     o[d.id]={prijs:pr,winkel:String(v.winkel||"").slice(0,40),inhoud:String(v.inhoud||"").slice(0,24),url:/^https:\/\//.test(v.url||"")?String(v.url).slice(0,400):"",at:+v.at||0}});S.prices=o;if(S.ready&&!S.spinning&&!S.addBeer)rerender()},()=>{});
   db.collection("catalog_extra").limit(1000).onSnapshot(s=>{S.catExtra=s.docs.map(d=>{const v=d.data()||{};return {naam:String(v.naam||"").slice(0,120),brouwerij:String(v.brouwerij||"").slice(0,120),plaats:String(v.plaats||"").slice(0,80),land:String(v.land||"").slice(0,60),stijl:String(v.stijl||"").slice(0,60),abv:String(v.abv||"").slice(0,6),smaken:Array.isArray(v.smaken)?v.smaken.filter(x=>TAGS.includes(x)).slice(0,8):[],by:v.by,at:v.at,bron:v.bron==="claude"?"claude":"",bronUrl:typeof v.bronUrl==="string"&&/^https:\/\//.test(v.bronUrl)?v.bronUrl.slice(0,500):"",extraId:d.id}}).filter(c=>c.naam);mergeCat();if(S.ready&&!S.addBeer)rerender()},()=>{});
   db.doc("meta/next").onSnapshot(d=>{const v=d.exists?d.data():null;const okS=x=>typeof x==="string"?x.slice(0,60):"";
-    S.next=v&&(v.stijl||v.land||v.naam)?{stijl:okS(v.stijl)||(v.soort!=="land"&&groupOf(v.naam)?v.naam:""),land:okS(v.land)||(v.soort==="land"?okS(v.naam):""),by:v.by,at:v.at,landSkip:!!v.landSkip,locatie:okS(v.locatie),blind:!!v.blind,adres:typeof v.adres==="string"?v.adres.slice(0,120):"",rev:typeof v.rev==="number"?v.rev:0,datums:Array.isArray(v.datums)?v.datums.filter(x=>typeof x==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(x)).slice(0,12):[],datum:typeof v.datum==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(v.datum)?v.datum:""}:null;if(S.next)S.next.naam=themeName(S.next);if(S.ready&&!S.spinning&&!S.addBeer&&!S.wheel)rerender()},()=>{});
+    S.next=v&&(v.stijl||v.land||v.naam)?{stijl:okS(v.stijl)||(v.soort!=="land"&&groupOf(v.naam)?v.naam:""),land:okS(v.land)||(v.soort==="land"?okS(v.naam):""),by:v.by,at:v.at,landSkip:!!v.landSkip,locatie:okS(v.locatie),blind:!!v.blind,adres:typeof v.adres==="string"?v.adres.slice(0,120):"",rev:typeof v.rev==="number"?v.rev:0,datums:Array.isArray(v.datums)?v.datums.filter(x=>typeof x==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(x)).slice(0,12):[],datum:typeof v.datum==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(v.datum)?v.datum:""}:null;if(S.next)S.next.naam=themeName(S.next);setTimeout(syncAgendaFeed,1500);if(S.ready&&!S.spinning&&!S.addBeer&&!S.wheel)rerender()},()=>{});
   db.collection("datumstemmen").limit(500).onSnapshot(s=>{const o={};s.docs.forEach(d=>{const v=d.data()||{};if(v.keuzes&&typeof v.keuzes==="object")o[d.id]={round:v.round,keuzes:v.keuzes,at:v.at||0}});S.votes=o;if(S.ready&&!S.spinning&&!S.addBeer&&document.activeElement?.id!=="p-date"&&document.activeElement?.id!=="p-time")rerender()},()=>{});
   db.collection("names").limit(500).onSnapshot(s=>{const o={};s.docs.forEach(d=>{const v=d.data()?.naam;if(typeof v==="string"&&v.trim())o[d.id]=v.trim().slice(0,30)});S.nick=o;if(S.ready&&!(S.editName&&document.activeElement?.id==="nick"))rerender();fillNames()},()=>{});
   db.collection("beers").limit(1000).onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]=d.data());S.bRaw=o;applyBlind();if(!S.ready)mark();else rerender()},()=>{if(!S.ready)mark()});

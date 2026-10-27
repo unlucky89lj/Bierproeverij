@@ -24,3 +24,8 @@ Zolang `firebase-config.js` leeg is, draait de app in **voorbeeldmodus**: alles 
 | `manifest.webmanifest`, `sw.js`, `icons/` | app-icoon en werken als app op je telefoon |
 
 Gemaakt en bijgehouden met Claude.
+
+## Agenda-abonnement
+`agenda.ics` is het agenda-abonnement van de groep (https://unlucky89lj.github.io/Bierproeverij/agenda.ics).
+De app zet de volgende proefavond in het document `meta/agenda`; een geplande taak draait
+`python3 tools/update_agenda.py <meta-agenda.json>` en pusht het bijgewerkte bestand.
