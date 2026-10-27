@@ -249,6 +249,10 @@ b.inline{display:inline;font-size:inherit}
 .recs{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
 .recs-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
 .sub-h{font-size:22px}
+.who-wrap{display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:nowrap}
+.who-wrap .who{white-space:nowrap}
+.lang-sel{appearance:none;-webkit-appearance:none;background:var(--surface);color:var(--muted);border:1px solid var(--line,rgba(127,127,127,.35));border-radius:999px;padding:3px 10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;cursor:pointer}
+.lang-sel:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .who{appearance:none;background:none;border:0;padding:0;font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-align:right}
 .who:hover{color:var(--amber)}
 .who:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
@@ -493,7 +497,7 @@ button.h-tile{appearance:none;font:inherit;color:var(--ink);text-align:left;curs
 <script src="backend.js"></script>
 <header>
   <div class="wrap">
-    <div class="brand"><h1>Bier<span>proeverij</span></h1><button type="button" id="who" class="who">Proefgroep</button></div>
+    <div class="brand"><h1 data-noi18n>Bier<span>proeverij</span></h1><button type="button" id="who" class="who">Proefgroep</button></div>
     <nav>
       <button id="tab-home" data-tab="home"><span class="ico"><svg class="tab-mug" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3.2 9.4 4.6 12 2.6l2.6 2 1.4-1.4.3 2.3H7.7z" fill="currentColor"/><path d="M5 8.6c-.5-1.8 1.2-3 2.6-2.4.5-1.4 2.7-1.7 3.5-.4.8-1.1 2.9-.9 3.3.5 1.6-.4 2.5 1.2 1.9 2.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9h11v10.2a1.8 1.8 0 0 1-1.8 1.8H7.3a1.8 1.8 0 0 1-1.8-1.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M16.5 11h1.6a2 2 0 0 1 2 2v2.6a2 2 0 0 1-2 2h-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 12v5.5M12.5 12v5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".6"/></svg></span><small>Home</small></button>
       <button id="tab-feed" data-tab="feed"><span class="ico"><span class="ms" aria-hidden="true">sports_bar</span><span class="badge" id="todo-badge" hidden></span></span><small>Proeven</small></button>
@@ -560,6 +564,131 @@ const isoOf=land=>ISO[String(land||"").trim().toLowerCase()]||"";
 const tempTag=stijl=>{const t=tempFor(stijl);return t?`<span class="temp mono" title="Ideale schenktemperatuur">${t}</span>`:""};
 
 const $=s=>document.querySelector(s);
+/* ---------- taalkeuze ---------- */
+const LANGS=[["nl","🇳🇱 NL"],["en","🇬🇧 EN"],["de","🇩🇪 DE"],["fr","🇫🇷 FR"],["es","🇪🇸 ES"]];
+let LANG=(()=>{try{const l=localStorage.getItem("bp-lang");return LANGS.some(x=>x[0]===l)?l:"nl"}catch(e){return "nl"}})();
+const LOC=()=>({nl:"nl-NL",en:"en-GB",de:"de-DE",fr:"fr-FR",es:"es-ES"})[LANG]||"nl-NL";
+const I18N={dict:null,cache:new Map(),land:null,busy:false};
+function i18nLand(){
+  if(I18N.land)return I18N.land;
+  const m={};
+  try{const dn=new Intl.DisplayNames(["nl"],{type:"region"});const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for(const a of A)for(const b of A){const c=a+b;let n;try{n=dn.of(c)}catch(e){continue}if(n&&n!==c)m[n]=c}}catch(e){}
+  Object.assign(m,{"VK":"GB","VS":"US","Verenigde Staten":"US","Verenigd Koninkrijk":"GB","Bosnië":"BA","Bosnië en Herzegovina":"BA","N-Macedonië":"MK","Noord-Macedonië":"MK","Dominicaanse Rep.":"DO","Dominicaanse Republiek":"DO","Trinidad":"TT","Trinidad en Tobago":"TT","Wit-Rusland":"BY","Congo":"CD","Congo-Kinshasa":"CD","Eswatini":"SZ","Tsjechië":"CZ","Bahama's":"BS","Kaapverdië":"CV"});
+  return I18N.land=m;
+}
+function i18nCountry(s){
+  const c=i18nLand()[s];if(!c)return null;
+  try{return new Intl.DisplayNames([LANG],{type:"region"}).of(c)}catch(e){return null}
+}
+function i18nLook(s){
+  const D=I18N.dict;if(!D)return null;const li=LANGS.findIndex(x=>x[0]===LANG)-1;
+  for(const re of [/\d+/g,/\d+(?:[.,]\d+)*/g]){
+    const key=s.replace(re,"#");let v=D[key],low=false;
+    if(!v&&key[0]&&key[0]!==key[0].toUpperCase()){v=D[key[0].toUpperCase()+key.slice(1)];low=!!v}
+    if(!v||v[li]==null)continue;
+    const nums=s.match(re)||[];let i=0;
+    let out=v[li].replace(/#/g,()=>nums[i++]??"#");
+    if(low&&!/^[A-Z]{2}/.test(out))out=out[0].toLowerCase()+out.slice(1);
+    return out;
+  }
+  return null;
+}
+const I18N_RULES=[
+  [/^Kaart van (.+?) met (.+)$/,(m,t,c)=>({en:`Map of ${c(m[1])} with ${t(m[2])}`,de:`Karte von ${c(m[1])} mit ${t(m[2])}`,fr:`Carte : ${c(m[1])}, avec ${t(m[2])}`,es:`Mapa de ${c(m[1])} con ${t(m[2])}`})],
+  [/^Website van (.+)$/,m=>({en:`${m[1]} website`,de:`Website von ${m[1]}`,fr:`Site de ${m[1]}`,es:`Web de ${m[1]}`})],
+  [/^Bij ([^,\s]+(?: [^,\s]+){0,2})(,.*)?$/,m=>({en:`At ${m[1]}'s${m[2]||""}`,de:`Bei ${m[1]}${m[2]||""}`,fr:`Chez ${m[1]}${m[2]||""}`,es:`En casa de ${m[1]}${m[2]||""}`})],
+  [/^uit (.+)$/,(m,t,c,cc)=>cc(m[1])&&({en:`from ${c(m[1])}`,de:`aus ${c(m[1])}`,fr:`de ${c(m[1])}`,es:`de ${c(m[1])}`})],
+  [/^(.+) uit ([^·]+)$/,(m,t,c,cc)=>cc(m[2])&&({en:`${t(m[1])} from ${c(m[2])}`,de:`${t(m[1])} aus ${c(m[2])}`,fr:`${t(m[1])} de ${c(m[2])}`,es:`${t(m[1])} de ${c(m[2])}`})],
+  [/^gedraaid op (.+)$/,m=>({en:`spun on ${m[1]}`,de:`gedreht am ${m[1]}`,fr:`tiré le ${m[1]}`,es:`girada el ${m[1]}`})],
+  [/^Kun je op (.+)\?$/,m=>({en:`Can you make ${m[1]}?`,de:`Kannst du am ${m[1]}?`,fr:`Es-tu dispo le ${m[1]} ?`,es:`¿Puedes el ${m[1]}?`})],
+  [/^Je gaf (.+) gemiddeld (\S+)$/,(m,t)=>({en:`You gave ${t(m[1])} an average of ${m[2]}`,de:`Du gabst ${t(m[1])} im Schnitt ${m[2]}`,fr:`Tu as donné en moyenne ${m[2]} à : ${t(m[1])}`,es:`Diste a ${t(m[1])} una media de ${m[2]}`})],
+  [/^Jullie gaven (.+) gemiddeld (\S+)$/,(m,t)=>({en:`The group gave ${t(m[1])} an average of ${m[2]}`,de:`Ihr gabt ${t(m[1])} im Schnitt ${m[2]}`,fr:`Vous avez donné en moyenne ${m[2]} à : ${t(m[1])}`,es:`Disteis a ${t(m[1])} una media de ${m[2]}`})],
+  [/^provincie (.+)$/,m=>({en:`${m[1]} province`,de:`Provinz ${m[1]}`,fr:`province de ${m[1]}`,es:`provincia de ${m[1]}`})],
+  [/^\((.+)\)$/,(m,t)=>{const x=t(m[1]);return x!==m[1]&&{all:`(${x})`}}],
+  [/^([✓✗→] ?)(.+)$/,(m,t)=>{const x=t(m[2]);return x!==m[2]&&{all:m[1]+x}}],
+];
+function T(s){
+  if(LANG==="nl"||!I18N.dict)return null;
+  const k=LANG+"\u0001"+s;if(I18N.cache.has(k))return I18N.cache.get(k);
+  I18N.cache.set(k,null); // recursion guard
+  const r=T0(s);I18N.cache.set(k,r);return r;
+}
+function T0(raw){
+  const m0=raw.match(/^([\s·]*)([\s\S]*?)([\s·]*)$/);const pre=m0[1],s=m0[2],post=m0[3];
+  if(!s||!/[A-Za-zÀ-ÿ]/.test(s))return null;
+  const wrap=x=>x==null?null:pre+x+post;
+  let v=i18nLook(s);if(v!=null)return wrap(v);
+  v=i18nCountry(s);if(v)return wrap(v);
+  const t=x=>T(x)??x,c=x=>i18nCountry(x.trim())??t(x),cc=x=>!!i18nLand()[x.trim()];
+  for(const [re,fn] of I18N_RULES){const m=s.match(re);if(!m)continue;const o=fn(m,t,c,cc);if(o){const r=o.all??o[LANG];if(r!=null)return wrap(r)}}
+  for(const sep of [" · ",": ",", "," / "]){
+    if(!s.includes(sep))continue;
+    let parts=s.split(sep);if(sep===": ")parts=[parts[0],parts.slice(1).join(": ")];
+    const tr=parts.map(p=>T(p));
+    if(tr.some(x=>x!=null)){const j=LANG==="fr"&&sep===": "?" : ":sep;return wrap(tr.map((x,i)=>x??parts[i]).join(j))}
+  }
+  return null;
+}
+const I18N_SKIP="script,style,textarea,svg,.ms,[data-noi18n]";
+function i18nText(n){
+  const p=n.parentElement;if(!p||p.closest(I18N_SKIP))return;
+  if(n.__o==null||(n.data!==n.__t&&n.data!==n.__o))n.__o=n.data;
+  const want=LANG==="nl"?n.__o:(T(n.__o)??n.__o);
+  n.__t=want;if(n.data!==want)n.data=want;
+}
+function i18nAttrs(el){
+  if(el.closest&&el.closest(I18N_SKIP))return;
+  for(const a of ["placeholder","title","aria-label"]){
+    if(!el.hasAttribute||!el.hasAttribute(a))continue;
+    const cur=el.getAttribute(a);el.__oa=el.__oa||{};el.__ta=el.__ta||{};
+    if(el.__oa[a]==null||(cur!==el.__ta[a]&&cur!==el.__oa[a]))el.__oa[a]=cur;
+    const want=LANG==="nl"?el.__oa[a]:(T(el.__oa[a])??el.__oa[a]);
+    el.__ta[a]=want;if(cur!==want)el.setAttribute(a,want);
+  }
+}
+function i18nWalk(root){
+  if(!root)return;
+  if(root.nodeType===3){i18nText(root);return}
+  if(root.nodeType!==1)return;
+  i18nAttrs(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT,{acceptNode:n=>n.nodeType===1&&n.matches(I18N_SKIP)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  let n;while((n=w.nextNode()))n.nodeType===3?i18nText(n):i18nAttrs(n);
+}
+function i18nApply(){
+  document.documentElement.lang=LANG;
+  I18N.busy=true;try{i18nWalk(document.body)}finally{I18N.busy=false}
+}
+const i18nObs=new MutationObserver(ms=>{
+  if(I18N.busy||(!I18N.dict&&LANG!=="nl"))return;
+  I18N.busy=true;
+  try{for(const m of ms){
+    if(m.type==="characterData")i18nText(m.target);
+    else if(m.type==="attributes")i18nAttrs(m.target);
+    else m.addedNodes.forEach(i18nWalk);
+  }}finally{I18N.busy=false}
+});
+function i18nInit(){
+  const host=$("#who");
+  if(host&&!$("#lang")){
+    const wrap=document.createElement("div");wrap.className="who-wrap";
+    host.replaceWith(wrap);
+    const sel=document.createElement("select");sel.id="lang";sel.className="lang-sel";sel.setAttribute("data-noi18n","");sel.setAttribute("aria-label","Taal / Language");
+    sel.innerHTML=LANGS.map(([c,l])=>`<option value="${c}"${c===LANG?" selected":""}>${l}</option>`).join("");
+    sel.addEventListener("change",()=>setLang(sel.value));
+    wrap.append(host,sel);
+  }
+  i18nObs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
+  fetch("i18n.json").then(r=>r.ok?r.json():null).then(d=>{if(d&&d.dict){I18N.dict=d.dict;I18N.cache.clear();if(LANG!=="nl"){rerenderForLang();i18nApply()}}}).catch(()=>{});
+  document.documentElement.lang=LANG;
+}
+function rerenderForLang(){try{if(typeof render==="function")render()}catch(e){}}
+function setLang(l){
+  LANG=l;try{localStorage.setItem("bp-lang",l)}catch(e){}
+  I18N.cache.clear();rerenderForLang();i18nApply();
+  const s=$("#lang");if(s&&s.value!==l)s.value=l;
+}
+
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const seg=s=>String(s).replace(/[^A-Za-z0-9_\-.~:@+]/g,"_").slice(0,150);
 const slug=s=>String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120)||"bier";
@@ -734,7 +863,7 @@ function beerInfo(c){
   const row=(l,v)=>v?`<dt>${l}</dt><dd>${v}</dd>`:"";
   const tp=tipsFor(c),pl=placeOf(c),iso=isoOf(c.land),gp=groupPhoto(c);
   const km=pl?kmFromAms(pl[0],pl[1]):0,regTxt=pl&&pl[2]?((["Nederland","België"].includes(c.land)?"provincie ":"")+pl[2]):"";
-  const cap=pl?`<b>${esc(c.plaats)}</b><span class="mm-dir"></span>${regTxt?` (${esc(regTxt)})`:""}${km>15?` · ± ${km.toLocaleString("nl-NL")} km hemelsbreed van Amsterdam`:km?" · vlak bij Amsterdam":""}`:`<b>${esc(c.land||"")}</b>${c.plaats?` · ${esc(c.plaats)}`:""}`;
+  const cap=pl?`<b>${esc(c.plaats)}</b><span class="mm-dir"></span>${regTxt?` (${esc(regTxt)})`:""}${km>15?` · ± ${km.toLocaleString(LOC())} km hemelsbreed van Amsterdam`:km?" · vlak bij Amsterdam":""}`:`<b>${esc(c.land||"")}</b>${c.plaats?` · ${esc(c.plaats)}`:""}`;
   return `${gp?`<figure class="gp-fig"><img src="${esc(gp)}" alt="Jullie foto van ${esc(c.naam)}"><figcaption class="note">Jullie eigen foto, gemaakt bij het scannen</figcaption></figure>`:""}${iso?`<figure class="mm"><div class="mini-map" data-iso="${iso}" data-land="${esc(c.land||"")}"${pl?` data-lat="${pl[0]}" data-lon="${pl[1]}" data-town="${esc(c.plaats)}"`:""} role="img" aria-label="Kaart van ${esc(c.land)}${pl?` met ${esc(c.plaats)}`:""}"></div>
     <figcaption><span class="mm-key"><i class="k-land"></i>${esc(c.land||"")}${pl?`<i class="k-town"></i>brouwerij`:""}<i class="k-box"></i>ligging in de wereld</span><span class="mm-cap">${cap}</span></figcaption></figure>`:""}<dl class="info-grid">
     ${row("Brouwerij",esc(c.brouwerij||""))}${row("Herkomst",esc([c.plaats,(placeOf(c)||[])[2]?((["Nederland","België"].includes(c.land)?"provincie ":"")+placeOf(c)[2]):"",c.land].filter(Boolean).join(" · ")))}
@@ -801,7 +930,7 @@ function viewScan(){
   return out;
 }
 
-const fmtDate=ms=>ms?new Date(ms).toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric"}):"";
+const fmtDate=ms=>ms?new Date(ms).toLocaleDateString(LOC(),{day:"numeric",month:"short",year:"numeric"}):"";
 function viewList(){
   if((S.listMode||"gehad")==="alle")return viewCatalog();
   const keys=Object.keys(S.beers);
@@ -939,7 +1068,7 @@ function wheelItems(){
   return GROUPS.map(g=>g[0]);
 }
 function themeCount(t){if(!t)return 0;return S.catalog.filter(c=>inGroup(c,t.stijl)&&(!t.land||c.land===t.land)).length}
-const fmtWhen=iso=>{const d=new Date(iso);return isNaN(d)?iso:d.toLocaleString("nl-NL",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})};
+const fmtWhen=iso=>{const d=new Date(iso);return isNaN(d)?iso:d.toLocaleString(LOC(),{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})};
 function votesFor(iso){const r={ja:[],misschien:[],nee:[]};Object.entries(S.votes).forEach(([uid,v])=>{if(v.round!==S.next?.at)return;const k=v.keuzes?.[iso];if(r[k])r[k].push(uid)});return r}
 function myVote(iso){const v=S.votes[S.me];return v&&v.round===S.next?.at?v.keuzes?.[iso]||"":""}
 function plannerHtml(){
@@ -987,7 +1116,7 @@ function newsCard(){
   const ev=newsItems();if(!ev.length)return "";
   const shown=ev.slice(0,8);
   return `<div class="news"><div class="news-head"><h3>Nieuw sinds je vorige bezoek</h3><button class="linkbtn" id="news-seen">Gezien</button></div>
-    <ul>${shown.map(e=>`<li><span class="mono news-when">${new Date(e.at).toLocaleString("nl-NL",{weekday:"short",hour:"2-digit",minute:"2-digit"})}</span><span><b class="inline">${who(e.uid)}</b> ${esc(e.txt)}${e.tid?` · <button class="linkbtn" data-open="${esc(e.tid)}">bekijk</button>`:""}</span></li>`).join("")}</ul>
+    <ul>${shown.map(e=>`<li><span class="mono news-when">${new Date(e.at).toLocaleString(LOC(),{weekday:"short",hour:"2-digit",minute:"2-digit"})}</span><span><b class="inline">${who(e.uid)}</b> ${esc(e.txt)}${e.tid?` · <button class="linkbtn" data-open="${esc(e.tid)}">bekijk</button>`:""}</span></li>`).join("")}</ul>
     ${ev.length>shown.length?`<p class="note">En nog ${ev.length-shown.length} andere wijzigingen.</p>`:""}</div>`;
 }
 /* ---------- rondleiding (voor een schermopname) ---------- */
@@ -1446,7 +1575,7 @@ function viewRecsTab(){
 const avondKey=ms=>{const d=new Date((ms||0)-6*3600e3);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 const avondLoc=ts=>{const l=(ts||[]).map(t=>t.locatie).find(Boolean);return l?(/^bij\b/i.test(l)?l:"Bij "+l):""};
 const avondBlind=ts=>(ts||[]).some(t=>t.blind);
-const avondLabel=k=>{const [y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long",year:"numeric"})};
+const avondLabel=k=>{const [y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString(LOC(),{weekday:"long",day:"numeric",month:"long",year:"numeric"})};
 function avonden(){const o={};S.tastings.forEach(t=>{const k=avondKey(t.at);(o[k]=o[k]||[]).push(t)});
   return Object.entries(o).map(([k,ts])=>({k,ts:ts.sort((a,b)=>(a.at||0)-(b.at||0))})).sort((a,b)=>b.k.localeCompare(a.k))}
 /* ---------- uitslagen vastleggen: na afloop verandert een avond niet meer ---------- */
@@ -1487,7 +1616,7 @@ function avondText(k){
 function avondenHtml(){
   const list=avonden();if(!list.length)return "";
   return `<section><h3>Proefavonden</h3><div class="list">${list.map(({k,ts})=>{const st=avondStats(ts);
-    return `<button class="row-btn avond-row" data-avond="${k}"><div class="avond-date"><b class="mono">${k.slice(8)}</b><span>${new Date(k).toLocaleDateString("nl-NL",{month:"short"})}</span></div>
+    return `<button class="row-btn avond-row" data-avond="${k}"><div class="avond-date"><b class="mono">${k.slice(8)}</b><span>${new Date(k).toLocaleDateString(LOC(),{month:"short"})}</span></div>
       <div class="row-main"><b>${esc(avondLabel(k))}</b><span>${avondLoc(ts)?esc(avondLoc(ts))+" · ":""}${avondBlind(ts)?"blind · ":""}${ts.length} ${ts.length===1?"bier":"bieren"} · ${st.proevers} ${st.proevers===1?"proever":"proevers"}</span><br>
       ${st.rank[0]?`<span>Winnaar: <b class="inline">${who(st.rank[0].uid)}</b></span>`:`<span>Nog geen winnaar</span>`}</div>
       ${st.beers[0]?`<span class="pill done">${fmt(st.beers[0].avg)}</span>`:""}</button>`}).join("")}</div></section>`;
@@ -1707,7 +1836,7 @@ function viewAgendaTab(){
   let up;
   if(!hasTheme){up=`<div class="empty"><h2 class="sub-h">Nog niets gepland</h2><p class="muted">${spinnerLine(st)}</p>${st.canStyle?`<button class="btn amber" data-wheel>Draai aan het rad</button>`:""}</div>`}
   else if(t.datum){const v=votesFor(t.datum),d=new Date(t.datum),days=Math.ceil((d-Date.now())/864e5);
-    up=`<div class="agenda-next"><div class="cal-sheet"><span>${d.toLocaleDateString("nl-NL",{month:"short"})}</span><b>${d.getDate()}</b><small>${d.toLocaleDateString("nl-NL",{weekday:"short"})}</small></div>
+    up=`<div class="agenda-next"><div class="cal-sheet"><span>${d.toLocaleDateString(LOC(),{month:"short"})}</span><b>${d.getDate()}</b><small>${d.toLocaleDateString(LOC(),{weekday:"short"})}</small></div>
       <div class="agenda-main"><div class="origin">Volgende proefavond</div><div class="next-name">${esc(themeName(t))}</div>
       <p><b class="inline">${esc(fmtWhen(t.datum))}</b> · ${days>1?`nog ${days} dagen`:days===1?"morgen":days===0?"vandaag":"geweest"}</p>
       <p class="note">${v.ja.length?`Komen: ${v.ja.map(u=>`<span class="inline">${who(u)}</span>`).join(", ")}`:"Nog niemand heeft ja gezegd"}${v.misschien.length?` · misschien: ${v.misschien.length}`:""}</p>
@@ -1721,7 +1850,7 @@ function viewAgendaTab(){
   const past=avonden();
   return `<div><h2>Agenda</h2><p class="muted">De volgende proefavond en alle eerdere avonden.</p></div>${up}
   <section><h3>Eerdere proefavonden</h3>${past.length?`<div class="list">${past.map(({k,ts})=>{const sx=avondStats(ts),w=sx.rank[0];
-    return `<button class="row-btn avond-row" data-avond-open="${k}"><div class="avond-date"><b class="mono">${k.slice(8)}</b><span>${new Date(k).toLocaleDateString("nl-NL",{month:"short"})}</span></div>
+    return `<button class="row-btn avond-row" data-avond-open="${k}"><div class="avond-date"><b class="mono">${k.slice(8)}</b><span>${new Date(k).toLocaleDateString(LOC(),{month:"short"})}</span></div>
       <div class="row-main"><b>${esc(avondLabel(k))}</b>${avondLoc(ts)||avondBlind(ts)?`<span class="note">${esc([avondLoc(ts),avondBlind(ts)?"blind geproefd":""].filter(Boolean).join(" · "))}</span><br>`:""}<span>${ts.map(x=>esc(x.naam)).slice(0,3).join(", ")}${ts.length>3?"…":""}</span><br><span>${w?`Winnaar: <b class="inline">${crownName(who(w.uid))}</b>`:"Nog geen winnaar"}</span></div>
       ${sx.beers[0]?`<span class="pill done">${fmt(sx.beers[0].avg)}</span>`:""}</button>`}).join("")}</div>`:`<p class="muted">Nog geen proefavonden geweest.</p>`}</section>`;
 }
@@ -2033,6 +2162,7 @@ try{const v=+localStorage.getItem("pb-seen");S.prevSeen=v>0?v:0;if(!v)localStora
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){try{localStorage.setItem("pb-seen",String(Date.now()))}catch(e){}}});
 render();
 function mergeCat(){const base=new Set(S.catBase.map(c=>slug(c.naam+"-"+c.brouwerij)));S.catalog=[...S.catBase,...S.catExtra.filter(c=>!base.has(slug(c.naam+"-"+(c.brouwerij||""))))]}
+i18nInit();
 fetch("catalog.json").then(r=>r.ok?r.json():[]).then(d=>{if(Array.isArray(d)){S.catBase=d;mergeCat();if(["list","res","recs","map"].includes(S.tab)&&!S.addBeer)render()}}).catch(()=>{});
 (async()=>{
   const c=window.claude; if(!c?.use){S.ready=true;render();return}
