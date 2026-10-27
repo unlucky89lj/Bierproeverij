@@ -409,6 +409,9 @@ span.inline{display:inline}
 @keyframes tap{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
 @media (prefers-reduced-motion:reduce){.tap-dot{animation-duration:.3s}}
 .act-toggles{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.beer-row>.act-toggles.wide{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:4px 18px;margin-top:-6px;min-width:0}
+.beer-row>.act-toggles.wide>details{min-width:0}.beer-row>.act-toggles.wide>details[open]{flex-basis:100%}
+.beer-row>.row-main{min-width:0}
 .info-more[open]{width:100%}
 .info-grid{display:grid;grid-template-columns:96px 1fr;gap:6px 12px;margin:8px 0 4px;font-size:13px;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .info-grid dt{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
@@ -850,7 +853,7 @@ function viewCatalog(){
       <div class="when mono" style="color:var(--muted)">${esc([c.stijl,c.abv?c.abv+"%":""].filter(Boolean).join(" · "))} ${tempTag(c.stijl)}</div>${pairLine(c.stijl)}
       ${c.extraId?`<span class="added">${c.bron==="claude"?`Nieuw · toegevoegd door Claude op ${fmtDate(c.at)}${c.bronUrl?` · <a href="${esc(c.bronUrl)}" target="_blank" rel="noopener">bron</a>`:""}`:`Toegevoegd door ${nameSpan(c.by)}`}${c.by===S.me?` · <button class="linkbtn" data-delx="${esc(c.extraId)}">verwijderen</button>`:""}</span>`:""}
       ${tried?`<div class="chips" style="margin-top:6px">${(c.smaken||[]).map(t=>`<span class="chip" style="cursor:default;padding:3px 9px;font-size:12px">${esc(t)}</span>`).join("")}</div>`:""}</div>
-      <div class="cat-act">${had?`<span class="pill done">Gehad · ${n}×</span>`:""}<button class="btn ghost small" data-cat="${c.i}" ${S.canWrite&&S.db?"":"disabled"}>${had?"Nog eens proeven":"Proeverij starten"}</button><div class="act-toggles"><details class="buy-more"><summary class="linkbtn">Waar te koop</summary><div class="buys compact">${buyLinks(c)}</div></details><details class="buy-more info-more"><summary class="linkbtn">Over dit bier</summary>${beerInfo(c)}</details></div></div></div>`}).join("")}</div>
+      <div class="cat-act">${had?`<span class="pill done">Gehad · ${n}×</span>`:""}<button class="btn ghost small" data-cat="${c.i}" ${S.canWrite&&S.db?"":"disabled"}>${had?"Nog eens proeven":"Proeverij starten"}</button></div><div class="act-toggles wide"><details class="buy-more"><summary class="linkbtn">Waar te koop</summary><div class="buys compact">${buyLinks(c)}</div></details><details class="buy-more info-more"><summary class="linkbtn">Over dit bier</summary>${beerInfo(c)}</details></div></div>`}).join("")}</div>
   ${rows.length>lim?`<button class="btn ghost" id="c-more" style="align-self:center">Meer tonen (${rows.length-lim})</button>`:""}`;
 }
 
@@ -1424,7 +1427,7 @@ function recsSection(mode){
     <p class="note">Nog niet door ${g?"de groep":"jou"} geproefd.</p>
     ${recs.length?`<div class="list">${recs.map(r=>`<div class="beer-row cat g"><div class="thumb ph glassbox">${glassSvg(r.c.stijl)}</div><div class="row-main"><b>${esc(r.c.naam)}</b><span>${esc(origin(r.c))}</span>
       <div class="when mono" style="color:var(--muted)">${esc([r.c.stijl,r.c.abv?r.c.abv+"%":""].filter(Boolean).join(" · "))} ${tempTag(r.c.stijl)}</div>${pairLine(r.c.stijl)}<span class="why">${esc(r.why)}</span></div>
-      <div class="cat-act"><button class="btn ghost small" data-cat="${r.i}" ${S.canWrite&&S.db?"":"disabled"}>Proeverij starten</button><div class="act-toggles"><details class="buy-more"><summary class="linkbtn">Waar te koop</summary><div class="buys compact">${buyLinks(r.c)}</div></details><details class="buy-more info-more"><summary class="linkbtn">Over dit bier</summary>${beerInfo(r.c)}</details></div></div></div>`).join("")}</div>`:`<p class="muted">Catalogus laden…</p>`}
+      <div class="cat-act"><button class="btn ghost small" data-cat="${r.i}" ${S.canWrite&&S.db?"":"disabled"}>Proeverij starten</button></div><div class="act-toggles wide"><details class="buy-more"><summary class="linkbtn">Waar te koop</summary><div class="buys compact">${buyLinks(r.c)}</div></details><details class="buy-more info-more"><summary class="linkbtn">Over dit bier</summary>${beerInfo(r.c)}</details></div></div>`).join("")}</div>`:`<p class="muted">Catalogus laden…</p>`}
   </section>`;
 }
 function viewRecsTab(){
