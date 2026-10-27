@@ -1837,10 +1837,10 @@ function evTimes(t){const [d,tm]=t.datum.split("T"),[y,mo,da]=d.split("-").map(N
 function icsFor(t,feed){
   const {zs,ze}=evTimes(t);const clean=x=>String(x).replace(/[\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
   const desc=(t.blind?"Blind proeven: de bieren krijgen nummers (Bier 1, 2, 3…) en worden na afloop onthuld. ":"Normaal proeven. ")+"Thema: "+themeName(t)+(t.stijl?" ("+(groupOf(t.stijl)?.[1].join(", ")||"")+")":"")+". Vul na elk bier de vragenlijst in de app in. Proost!";
-  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bierproeverij//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH",...(feed?["X-WR-CALNAME:🍺 Bierproeverij","X-WR-TIMEZONE:Europe/Amsterdam","REFRESH-INTERVAL;VALUE=DURATION:PT3H","X-PUBLISHED-TTL:PT3H"]:[]),"BEGIN:VEVENT",`UID:bp-${t.at||zs}@proefgroep`,`SEQUENCE:${t.rev||0}`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
-    `DTSTART:${zs}`,`DTEND:${ze}`,`SUMMARY:${clean("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}`,`DESCRIPTION:${clean(desc)}`,...(locText(t)?[`LOCATION:${clean(locText(t))}`]:[]),
-    "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("Morgen bierproeverij: "+themeName(t))}`,"TRIGGER:-P1D","END:VALARM",
-    "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("Over 2 uur bierproeverij!")}`,"TRIGGER:-PT2H","END:VALARM",
+  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bierproeverij//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH",...(feed?["X-WR-CALNAME:🍺 Bierproeverij","X-APPLE-CALENDAR-COLOR:#E3A01B","COLOR:goldenrod","X-WR-TIMEZONE:Europe/Amsterdam","REFRESH-INTERVAL;VALUE=DURATION:PT3H","X-PUBLISHED-TTL:PT3H"]:[]),"BEGIN:VEVENT",`UID:bp-${t.at||zs}@proefgroep`,`SEQUENCE:${t.rev||0}`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
+    `DTSTART:${zs}`,"COLOR:goldenrod",`DTEND:${ze}`,`SUMMARY:${clean("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}`,`DESCRIPTION:${clean(desc)}`,...(locText(t)?[`LOCATION:${clean(locText(t))}`]:[]),
+    "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("🍺 Morgen bierproeverij: "+themeName(t))}`,"TRIGGER:-P1D","END:VALARM",
+    "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("🍺 Over 2 uur bierproeverij! Proost!")}`,"TRIGGER:-PT2H","END:VALARM",
     "END:VEVENT","END:VCALENDAR"].join("\r\n")+"\r\n";
 }
 const locText=t=>[t.locatie?(/^bij\b/i.test(t.locatie)?t.locatie:"Bij "+t.locatie):"",t.adres||""].filter(Boolean).join(", ");

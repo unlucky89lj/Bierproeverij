@@ -12,7 +12,7 @@ import json, re, sys, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "agenda.ics"
 HEAD = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Bierproeverij//NL", "CALSCALE:GREGORIAN",
-        "METHOD:PUBLISH", "X-WR-CALNAME:🍺 Bierproeverij", "X-WR-TIMEZONE:Europe/Amsterdam",
+        "METHOD:PUBLISH", "X-WR-CALNAME:🍺 Bierproeverij", "X-APPLE-CALENDAR-COLOR:#E3A01B", "COLOR:goldenrod", "X-WR-TIMEZONE:Europe/Amsterdam",
         "REFRESH-INTERVAL;VALUE=DURATION:PT3H", "X-PUBLISHED-TTL:PT3H"]
 
 def events(text):
