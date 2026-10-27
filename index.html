@@ -427,6 +427,7 @@ span.inline{display:inline}
 .h-tile .ms{color:var(--muted);font-size:22px;width:22px;height:22px}
 .h-tile small{font:500 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .h-tile b{font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.h-tile .h-spin{margin-top:6px;align-self:stretch;justify-content:center}.h-tile.h-can{border-color:var(--amber)}
 .h-tile.on{border-color:var(--amber);background:var(--amber-soft)}.h-tile.on .ms{color:var(--amber)}
 .h-next{display:flex;flex-direction:column;gap:12px}.h-next h3{margin:0}
 .h-todo{appearance:none;display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--amber);background:var(--amber-soft);color:var(--ink);border-radius:var(--r);padding:12px 14px;cursor:pointer;font:inherit}
@@ -1195,19 +1196,19 @@ function viewHome(){
     :(t&&t.by?(t.by===S.me?"Jij":who(t.by)):"–");
   const dateTile=cur?(t.datum?esc(fmtWhen(t.datum)):(t.datums||[]).length?`${t.datums.length} ${t.datums.length===1?"voorstel":"voorstellen"}, stem mee`:"Nog niet gepland"):"Eerst draaien";
   const todo=S.tastings.filter(x=>!myAnswer(x.id)).length;
-  const tile=(ic,lab,val,cls="")=>`<div class="h-tile ${cls}"><span class="ms" aria-hidden="true">${ic}</span><small>${lab}</small><b>${val}</b></div>`;
+  const tile=(ic,lab,val,cls="",extra="")=>`<div class="h-tile ${cls}"><span class="ms" aria-hidden="true">${ic}</span><small>${lab}</small><b>${val}</b>${extra}</div>`;
   return `<div><h2>Home</h2><p class="muted">De volgende proeverij en wie er bovenaan staat.</p></div>
   ${todo?`<button class="h-todo" data-go="feed"><span class="ms" aria-hidden="true">sports_bar</span><span><b>${todo} ${todo===1?"vragenlijst wacht":"vragenlijsten wachten"} op jou</b><small>Ga naar Proeven</small></span><span aria-hidden="true">→</span></button>`:""}
   <div class="panel h-next"><h3>Volgende proeverij</h3>
     <div class="h-tiles">
-      ${tile("emoji_events",st.roundOpen?"Mag draaien":"Gedraaid door",whoTile)}
+      ${tile("emoji_events",st.roundOpen?"Mag draaien":"Gedraaid door",whoTile,st.canStyle||st.landStep?"h-can":"",st.canStyle?`<button class="btn amber small h-spin" data-wheel>Draai aan het rad</button>`:st.landStep?`<button class="btn amber small h-spin" data-wheel-land>Draai voor land</button>`:"")}
       ${tile("format_list_bulleted","Categorie",cur?esc(themeName(t)):"Nog niet gekozen",cur?"on":"")}
       ${tile("calendar_month","Datum",dateTile,cur&&t.datum?"on":"")}
       ${tile(cur&&t.blind?"visibility_off":"sports_bar","Proefwijze",cur?(t.blind?"Blind":"Standaard"):"–",cur&&t.blind?"on":"")}
       ${tile("home","Locatie",cur?(locText(t)?esc(locText(t)):"Nog niet bekend"):"Eerst draaien",cur&&locText(t)?"on":"")}
     </div>
     <p class="note">${st.roundOpen?spinnerLine(st):`${t.stijl?esc(groupOf(t.stijl)?.[1].join(", ")||""):"Alle stijlen"}${t.land?" · uit "+esc(t.land):""}${t.at?" · gedraaid op "+fmtDate(t.at):""}`}${st.roundOpen&&hasTheme?` Vorig thema: ${esc(themeName(t))}.`:""}</p>
-    <div class="next-act">${st.canStyle?`<button class="btn amber" data-wheel>Draai aan het rad</button>`:""}${cur?`<button class="btn ${st.canStyle?"ghost":"amber"}" data-theme-go>Bekijk ${themeCount(t)} bieren</button>`:""}${st.landStep?`<button class="btn ghost small" data-wheel-land>Draai voor land</button>`:""}</div>
+    <div class="next-act">${cur?`<button class="btn amber" data-theme-go>Bekijk ${themeCount(t)} bieren</button>`:""}</div>
     ${cur?locationHtml(t):""}
     ${cur?modeHtml(t):""}
     ${cur?plannerHtml():""}
