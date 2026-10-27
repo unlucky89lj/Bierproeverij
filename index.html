@@ -251,8 +251,16 @@ b.inline{display:inline;font-size:inherit}
 .sub-h{font-size:22px}
 .who-wrap{display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:nowrap}
 .who-wrap .who{white-space:nowrap}
-.lang-sel{appearance:none;-webkit-appearance:none;background:var(--surface);color:var(--muted);border:1px solid var(--line,rgba(127,127,127,.35));border-radius:999px;padding:3px 10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;cursor:pointer}
-.lang-sel:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.lang-box{position:relative}
+.lang-btn{appearance:none;display:flex;align-items:center;gap:6px;background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 8px 3px 4px;font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;cursor:pointer}
+.lang-btn:focus-visible,.lang-menu button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.flag{width:24px;height:16px;border-radius:3px;display:block;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.lang-btn .chev{font-size:9px;opacity:.7}
+.lang-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:grid;gap:2px;min-width:150px}
+.lang-menu[hidden]{display:none}
+.lang-menu button{appearance:none;display:flex;align-items:center;gap:10px;background:none;border:0;border-radius:8px;padding:8px 10px;color:var(--ink,inherit);font:inherit;font-size:14px;cursor:pointer;text-align:left}
+.lang-menu button:hover{background:var(--sunk)}
+.lang-menu button[aria-checked="true"]{background:var(--sunk);font-weight:700}
 .who{appearance:none;background:none;border:0;padding:0;font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-align:right}
 .who:hover{color:var(--amber)}
 .who:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
@@ -565,7 +573,15 @@ const tempTag=stijl=>{const t=tempFor(stijl);return t?`<span class="temp mono" t
 
 const $=s=>document.querySelector(s);
 /* ---------- taalkeuze ---------- */
-const LANGS=[["nl","🇳🇱 NL"],["en","🇬🇧 EN"],["de","🇩🇪 DE"],["fr","🇫🇷 FR"],["es","🇪🇸 ES"]];
+const LANGS=[["nl","Nederlands"],["en","English"],["de","Deutsch"],["fr","Français"],["es","Español"]];
+const FLAGS={
+ nl:'<rect width="30" height="20" fill="#21468B"/><rect width="30" height="13.33" fill="#fff"/><rect width="30" height="6.67" fill="#AE1C28"/>',
+ en:'<clipPath id="fgb"><rect width="30" height="20"/></clipPath><g clip-path="url(#fgb)"><rect width="30" height="20" fill="#012169"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#C8102E" stroke-width="1.6"/><path d="M15 0v20M0 10h30" stroke="#fff" stroke-width="6"/><path d="M15 0v20M0 10h30" stroke="#C8102E" stroke-width="3.4"/></g>',
+ de:'<rect width="30" height="20" fill="#FFCE00"/><rect width="30" height="13.33" fill="#DD0000"/><rect width="30" height="6.67" fill="#000"/>',
+ fr:'<rect width="30" height="20" fill="#ED2939"/><rect width="20" height="20" fill="#fff"/><rect width="10" height="20" fill="#002395"/>',
+ es:'<rect width="30" height="20" fill="#AA151B"/><rect y="5" width="30" height="10" fill="#F1BF00"/><rect x="7" y="7.6" width="3.4" height="4.8" rx=".6" fill="#AA151B" opacity=".85"/>'
+};
+const flagSvg=c=>`<svg class="flag" viewBox="0 0 30 20" aria-hidden="true">${FLAGS[c]||""}</svg>`;
 let LANG=(()=>{try{const l=localStorage.getItem("bp-lang");return LANGS.some(x=>x[0]===l)?l:"nl"}catch(e){return "nl"}})();
 const LOC=()=>({nl:"nl-NL",en:"en-GB",de:"de-DE",fr:"fr-FR",es:"es-ES"})[LANG]||"nl-NL";
 const I18N={dict:null,cache:new Map(),land:null,busy:false};
@@ -673,20 +689,30 @@ function i18nInit(){
   if(host&&!$("#lang")){
     const wrap=document.createElement("div");wrap.className="who-wrap";
     host.replaceWith(wrap);
-    const sel=document.createElement("select");sel.id="lang";sel.className="lang-sel";sel.setAttribute("data-noi18n","");sel.setAttribute("aria-label","Taal / Language");
-    sel.innerHTML=LANGS.map(([c,l])=>`<option value="${c}"${c===LANG?" selected":""}>${l}</option>`).join("");
-    sel.addEventListener("change",()=>setLang(sel.value));
-    wrap.append(host,sel);
+    const box=document.createElement("div");box.className="lang-box";box.id="lang";box.setAttribute("data-noi18n","");
+    box.innerHTML=`<button type="button" class="lang-btn" aria-haspopup="true" aria-expanded="false" aria-label="Taal / Language"></button><div class="lang-menu" role="menu" hidden>${LANGS.map(([c,n])=>`<button type="button" role="menuitemradio" data-lang="${c}">${flagSvg(c)}<span>${n}</span></button>`).join("")}</div>`;
+    const btn=box.querySelector(".lang-btn"),menu=box.querySelector(".lang-menu");
+    const open=v=>{menu.hidden=!v;btn.setAttribute("aria-expanded",v?"true":"false")};
+    btn.addEventListener("click",e=>{e.stopPropagation();open(menu.hidden)});
+    menu.addEventListener("click",e=>{const b=e.target.closest("[data-lang]");if(!b)return;open(false);setLang(b.dataset.lang)});
+    document.addEventListener("click",e=>{if(!box.contains(e.target))open(false)});
+    document.addEventListener("keydown",e=>{if(e.key==="Escape")open(false)});
+    wrap.append(host,box);langPaint();
   }
   i18nObs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:["placeholder","title","aria-label"]});
   fetch("i18n.json").then(r=>r.ok?r.json():null).then(d=>{if(d&&d.dict){I18N.dict=d.dict;I18N.cache.clear();if(LANG!=="nl"){rerenderForLang();i18nApply()}}}).catch(()=>{});
   document.documentElement.lang=LANG;
 }
 function rerenderForLang(){try{if(typeof render==="function")render()}catch(e){}}
+function langPaint(){
+  const box=$("#lang");if(!box)return;
+  box.querySelector(".lang-btn").innerHTML=`${flagSvg(LANG)}<span>${LANG.toUpperCase()}</span><span class="chev">▾</span>`;
+  box.querySelectorAll("[data-lang]").forEach(b=>b.setAttribute("aria-checked",b.dataset.lang===LANG?"true":"false"));
+}
 function setLang(l){
   LANG=l;try{localStorage.setItem("bp-lang",l)}catch(e){}
   I18N.cache.clear();rerenderForLang();i18nApply();
-  const s=$("#lang");if(s&&s.value!==l)s.value=l;
+  langPaint();
 }
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
