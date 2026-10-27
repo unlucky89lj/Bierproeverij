@@ -25,7 +25,7 @@ service cloud.firestore {
     match /catalog_extra/{d} { allow read, write: if signedIn(); }
     match /prijzen/{d} { allow read: if signedIn(); allow write: if signedIn(); }
 
-    // Wijnproeverij (map wijn/): dezelfde regels, met verzamelingen die beginnen met wijn_
+    // Wijnproeverij (eigen repo, zelfde Firebase-project mogelijk): dezelfde regels, met verzamelingen die beginnen met wijn_
     function wgrp(g) { return get(/databases/$(db)/documents/wijn_groups/$(g)).data; }
     function wmember(g) { return signedIn() && request.auth.uid in wgrp(g).members; }
     function wadmin(g) { return signedIn() && (request.auth.uid in wgrp(g).admins || request.auth.uid == wgrp(g).owner); }

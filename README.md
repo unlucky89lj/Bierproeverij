@@ -4,7 +4,7 @@ Samen blind bier proeven met je vrienden: aan het rad draaien voor het thema, ee
 
 **Open de app:** https://unlucky89lj.github.io/Bierproeverij/
 
-🍷 **Ook voor wijn:** de [Wijnproeverij](https://unlucky89lj.github.io/Bierproeverij/wijn/) staat in de map `wijn/`, met dezelfde functies.
+🍷 **Ook voor wijn:** de [Wijnproeverij](https://unlucky89lj.github.io/Wijnproeverij/) heeft dezelfde functies (repo [unlucky89lj/Wijnproeverij](https://github.com/unlucky89lj/Wijnproeverij)).
 
 ## Wat zit erin
 - **Home:** wie mag draaien, categorie, datum, proefwijze (standaard of blind), locatie, ranglijst en *Mijn proeverijen*.
