@@ -302,6 +302,9 @@ span.inline{display:inline}
 .propose{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .propose input{font:15px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;flex:1 1 140px;min-width:0}
 .steps{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode-step{grid-column:1/-1}.mode-step>div{flex:1}.mode-press{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.mode-btn{appearance:none;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:2px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--ink);font:700 15px var(--f-body);cursor:pointer}
+.mode-btn[aria-pressed="true"]{border-color:var(--amber);background:var(--amber);color:#fff}.mode-btn:disabled{opacity:.5;cursor:default}.mode-btn .ms{font-size:20px;width:20px;height:20px}
 .step{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);min-width:0}
 .step.on{border-color:var(--amber)}
 .step-n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--muted);font-size:13px;flex:none}
@@ -1204,7 +1207,7 @@ function viewHome(){
       ${st.canStyle||st.landStep?`<button type="button" class="h-tile h-can" ${st.canStyle?"data-wheel":"data-wheel-land"}><span class="ms" aria-hidden="true">emoji_events</span><small>${st.roundOpen?"Mag draaien":"Gedraaid door"}</small><b>${whoTile}</b><span class="h-go">${st.canStyle?"Tik om aan het rad te draaien":"Tik om voor het land te draaien"} →</span></button>`:tile("emoji_events",st.roundOpen?"Mag draaien":"Gedraaid door",whoTile)}
       ${tile("format_list_bulleted","Categorie",cur?esc(themeName(t)):"Nog niet gekozen",cur?"on":"")}
       ${tile("calendar_month","Datum",dateTile,cur&&t.datum?"on":"")}
-      ${tile(cur&&t.blind?"visibility_off":"sports_bar","Proefwijze",cur?(t.blind?"Blind":"Standaard"):"–",cur&&t.blind?"on":"")}
+      ${tile(cur&&t.blind?"visibility_off":"sports_bar","Proefwijze",cur?(t.blind?"Blind":"Normaal"):"–",cur&&t.blind?"on":"")}
       ${tile("home","Locatie",cur?(locText(t)?esc(locText(t)):"Nog niet bekend"):"Eerst draaien",cur&&locText(t)?"on":"")}
     </div>
     <p class="note">${st.roundOpen?spinnerLine(st):`${t.stijl?esc(groupOf(t.stijl)?.[1].join(", ")||""):"Alle stijlen"}${t.land?" · uit "+esc(t.land):""}${t.at?" · gedraaid op "+fmtDate(t.at):""}`}${st.roundOpen&&hasTheme?` Vorig thema: ${esc(themeName(t))}.`:""}</p>
@@ -1217,6 +1220,10 @@ function viewHome(){
   ${winsHtml()||`<div class="panel"><h3>Ranglijst</h3><p class="muted">Na de eerste proefavond zie je hier wie de meeste avonden wint.</p></div>`}
   <button class="linkbtn" data-go="res" style="align-self:flex-start">Alle uitslagen en badges →</button>`;
 }
+function modeStep(){const t=S.next||{},has=!!(t.stijl||t.land),can=has&&S.canWrite&&S.db&&S.me,b=!!t.blind;
+  return `<div class="step mode-step${has?" done":""}"><span class="step-n mono">3</span><div><small>Proefwijze · kies zelf, geen rad</small>
+    <div class="mode-press" role="group" aria-label="Proefwijze">${[["0","Normaal","sports_bar"],["1","Blind","visibility_off"]].map(([v,l,ic])=>`<button type="button" class="mode-btn" data-mode-set="${v}" aria-pressed="${has&&(v==="1")===b}" ${can?"":"disabled"}><span class="ms" aria-hidden="true">${ic}</span>${l}</button>`).join("")}</div>
+    ${has?"":`<span class="note">Eerst de bierstijl draaien</span>`}</div></div>`}
 function viewWheel(){
   const st=spinState(), type=S.wheelType||"stijl", items=wheelItems(), res=S.spinResult, t=S.next||{};
   const back=`<button class="linkbtn back" data-wheel-close>← Home</button>`;
@@ -1224,7 +1231,7 @@ function viewWheel(){
   const stepper=(n,label,val,active)=>`<div class="step${active?" on":""}${val?" done":""}"><span class="step-n mono">${val?"✓":n}</span><div><small>${label}</small><b>${val?esc(val):active?"Nu draaien":"–"}</b></div></div>`;
   const stijlVal=type==="land"||S.wheelDone?t.stijl||"":"", landVal=S.wheelDone?t.land||(t.landSkip?"Overgeslagen":""):"";
   const head=`${back}<div><h2>Rad van de proeverij</h2><p class="muted">Eén keer draaien voor de stijl, één keer voor het land. De uitkomst staat meteen vast.</p></div>
-  <div class="steps">${stepper(1,"Bierstijl",stijlVal,type==="stijl"&&!S.wheelDone)}${stepper(2,"Land",landVal,type==="land"&&!S.wheelDone)}</div>`;
+  <div class="steps">${stepper(1,"Bierstijl",stijlVal,type==="stijl"&&!S.wheelDone)}${stepper(2,"Land",landVal,type==="land"&&!S.wheelDone)}${modeStep()}</div>`;
   if(S.wheelDone)return head+`<div class="spin-result"><p class="note">Het thema van de volgende proeverij is</p><div class="next-name">${esc(themeName(t))}</div>
     <div class="next-act" style="justify-content:center"><button class="btn amber" data-theme-go>Bekijk ${themeCount(t)} bieren</button><button class="btn ghost" data-wheel-close>Klaar</button></div></div>
     <div class="next col">${plannerHtml()}</div>`;
@@ -1666,7 +1673,7 @@ function evTimes(t){const [d,tm]=t.datum.split("T"),[y,mo,da]=d.split("-").map(N
   const st=new Date(y,mo-1,da,hh,mi),en=new Date(st.getTime()+3*36e5),z=x=>x.toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";return {st,en,zs:z(st),ze:z(en)}}
 function icsFor(t){
   const {zs,ze}=evTimes(t);const clean=x=>String(x).replace(/[\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
-  const desc=(t.blind?"Blind proeven: de bieren krijgen nummers (Bier 1, 2, 3…) en worden na afloop onthuld. ":"Standaard proeven. ")+"Thema: "+themeName(t)+(t.stijl?" ("+(groupOf(t.stijl)?.[1].join(", ")||"")+")":"")+". Vul na elk bier de vragenlijst in de app in. Proost!";
+  const desc=(t.blind?"Blind proeven: de bieren krijgen nummers (Bier 1, 2, 3…) en worden na afloop onthuld. ":"Normaal proeven. ")+"Thema: "+themeName(t)+(t.stijl?" ("+(groupOf(t.stijl)?.[1].join(", ")||"")+")":"")+". Vul na elk bier de vragenlijst in de app in. Proost!";
   return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Bierproeverij//NL","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",`UID:bp-${t.at||zs}@proefgroep`,`SEQUENCE:${t.rev||0}`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
     `DTSTART:${zs}`,`DTEND:${ze}`,`SUMMARY:${clean("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}`,`DESCRIPTION:${clean(desc)}`,...(locText(t)?[`LOCATION:${clean(locText(t))}`]:[]),
     "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${clean("Morgen bierproeverij: "+themeName(t))}`,"TRIGGER:-P1D","END:VALARM",
@@ -1686,15 +1693,15 @@ function locationHtml(t){const can=S.canWrite&&S.db&&S.me,l=locText(t);
     <div class="next-act"><button class="btn amber small" type="submit">Opslaan</button><button class="btn ghost small" type="button" id="loc-cancel">Annuleren</button></div></form>`;
   return `<div class="loc-row"><span class="ms" aria-hidden="true">home</span><span>${l?`<b>${esc(l)}</b>`:`<span class="muted">Locatie nog niet bekend</span>`}</span>${can?`<button class="linkbtn" id="loc-edit">${l?"Wijzigen":"Locatie invullen"}</button>`:""}</div>`}
 function modeHtml(t){const can=S.canWrite&&S.db&&S.me,b=!!t.blind;
-  return `<div class="mode-row"><span class="ms" aria-hidden="true">${b?"visibility_off":"sports_bar"}</span><span><b>${b?"Blind proeven":"Standaard proeven"}</b><small>${b?"Bieren heten Bier 1, 2, 3… en worden na afloop onthuld":"Iedereen ziet welk bier er geproefd wordt"}</small></span>
-    ${can?`<div class="chips mode-chips" role="group" aria-label="Proefwijze"><button type="button" class="chip" data-mode-set="0" aria-pressed="${!b}">Standaard</button><button type="button" class="chip" data-mode-set="1" aria-pressed="${b}">Blind</button></div>`:""}</div>`}
-function outlookLink(t){const {st,en}=evTimes(t);return `https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}&startdt=${encodeURIComponent(st.toISOString())}&enddt=${encodeURIComponent(en.toISOString())}&body=${encodeURIComponent((t.blind?"Blind proeven. ":"Standaard proeven. ")+"Thema: "+themeName(t))}${locText(t)?`&location=${encodeURIComponent(locText(t))}`:""}`}
+  return `<div class="mode-row"><span class="ms" aria-hidden="true">${b?"visibility_off":"sports_bar"}</span><span><b>${b?"Blind proeven":"Normaal proeven"}</b><small>${b?"Bieren heten Bier 1, 2, 3… en worden na afloop onthuld":"Iedereen ziet welk bier er geproefd wordt"}</small></span>
+    ${can?`<div class="chips mode-chips" role="group" aria-label="Proefwijze"><button type="button" class="chip" data-mode-set="0" aria-pressed="${!b}">Normaal</button><button type="button" class="chip" data-mode-set="1" aria-pressed="${b}">Blind</button></div>`:""}</div>`}
+function outlookLink(t){const {st,en}=evTimes(t);return `https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}&startdt=${encodeURIComponent(st.toISOString())}&enddt=${encodeURIComponent(en.toISOString())}&body=${encodeURIComponent((t.blind?"Blind proeven. ":"Normaal proeven. ")+"Thema: "+themeName(t))}${locText(t)?`&location=${encodeURIComponent(locText(t))}`:""}`}
 function calButtons(t,small){return `${calChangeBanner()}<div class="cal-btns"><button class="btn amber${small?" small":""}" data-ics><span class="ms" aria-hidden="true">calendar_month</span> Zet in mijn agenda</button><a class="btn ghost small" data-cal-add href="${gcalLink(t)}" target="_blank" rel="noopener">Google Agenda</a><a class="btn ghost small" data-cal-add href="${outlookLink(t)}" target="_blank" rel="noopener">Outlook</a></div>
   <p class="note ics-note">iPhone: tik op <b>Zet in mijn agenda</b>, open het bestand en kies <b>Voeg toe</b>. Android: kies <b>Google Agenda</b>. Met een herinnering een dag en twee uur van tevoren. Wijzigt de datum of locatie, dan zie je hier een melding; tik dan opnieuw. Op iPhone wordt de bestaande afspraak dan bijgewerkt, bij Google of Outlook verwijder je de oude.</p>`}
 function gcalLink(t){const [d,tm]=t.datum.split("T"),st=d.replace(/-/g,"")+"T"+tm.replace(":","")+"00";
   const [y,mo,da]=d.split("-").map(Number),[hh,mi]=tm.split(":").map(Number),en=new Date(y,mo-1,da,hh+3,mi),
     ed=`${en.getFullYear()}${pad2(en.getMonth()+1)}${pad2(en.getDate())}T${pad2(en.getHours())}${pad2(en.getMinutes())}00`;
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE${locText(t)?`&location=${encodeURIComponent(locText(t))}`:""}&text=${encodeURIComponent("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}&dates=${st}/${ed}&ctz=Europe/Amsterdam&details=${encodeURIComponent((t.blind?"Blind proeven. ":"Standaard proeven. ")+"Thema: "+themeName(t))}`}
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE${locText(t)?`&location=${encodeURIComponent(locText(t))}`:""}&text=${encodeURIComponent("🍺 Bierproeverij"+(t.blind?" (blind)":"")+": "+themeName(t))}&dates=${st}/${ed}&ctz=Europe/Amsterdam&details=${encodeURIComponent((t.blind?"Blind proeven. ":"Normaal proeven. ")+"Thema: "+themeName(t))}`}
 function viewAgendaTab(){
   const t=S.next, st=spinState(), hasTheme=t&&(t.stijl||t.land)&&!st.roundOpen;
   let up;
@@ -1851,7 +1858,7 @@ function bind(){
   const lf=$("#loc-form");if(lf)lf.onsubmit=async e=>{e.preventDefault();const locatie=$("#loc-who").value.trim().slice(0,60),adres=$("#loc-adres").value.trim().slice(0,120),rev=(S.next.rev||0)+1;
     try{await S.db.doc("meta/next").update({locatie,adres,rev});S.next={...S.next,locatie,adres,rev};S.locEdit=false;render();toast(locatie||adres?"Locatie opgeslagen":"Locatie gewist")}catch(x){toast("Opslaan mislukt.")}};
   document.querySelectorAll("[data-mode-set]").forEach(b=>b.onclick=async()=>{const blind=b.dataset.modeSet==="1";if(!S.next||!!S.next.blind===blind)return;const rev=(S.next.rev||0)+1;
-    try{await S.db.doc("meta/next").update({blind,rev});S.next={...S.next,blind,rev};render();toast(blind?"Volgende proeverij: blind proeven":"Volgende proeverij: standaard proeven")}catch(x){toast("Opslaan mislukt.")}});
+    try{await S.db.doc("meta/next").update({blind,rev});S.next={...S.next,blind,rev};render();toast(blind?"Volgende proeverij: blind proeven":"Volgende proeverij: normaal proeven")}catch(x){toast("Opslaan mislukt.")}});
   document.querySelectorAll("[data-reveal]").forEach(b=>b.onclick=async()=>{if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Zeker? Tik nogmaals";return}
     try{await S.db.doc("tastings/"+b.dataset.reveal).update({onthuld:true});const t=(S.tRaw||[]).find(x=>x.id===b.dataset.reveal);if(t)t.onthuld=true;applyBlind();render();toast("Onthuld!")}catch(x){toast("Onthullen mislukt.")}});
   document.querySelectorAll("[data-reveal-all]").forEach(b=>b.onclick=async()=>{if(b.dataset.confirm!=="1"){b.dataset.confirm="1";b.textContent="Zeker? Tik nogmaals";return}
